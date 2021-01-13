@@ -13,7 +13,6 @@ namespace MPINET
 
                 if (pivot > 1)
                 {
-
                     Quick_Sort(arr, left, pivot - 1);
                 }
                 if (pivot + 1 < right)
@@ -28,13 +27,12 @@ namespace MPINET
             BankCheck pivot = arr[left];
             while (true)
             {
-
-                while (Int32.Parse(arr[left].BankId) < Int32.Parse(pivot.BankId))
+                while (CompareBankCheck(arr[left], pivot) < 0)
                 {
                     left++;
                 }
 
-                while (Int32.Parse(arr[right].BankId) > Int32.Parse(pivot.BankId))
+                while (CompareBankCheck(arr[right], pivot) > 0)
                 {
                     right--;
                 }
@@ -56,6 +54,11 @@ namespace MPINET
             }
         }
 
+        public static int CompareBankCheck(BankCheck b1, BankCheck b2)
+        {
+            return (String.Compare(b1.BankId, b2.BankId) == 0) ? String.Compare(b1.AccountId, b2.AccountId) : String.Compare(b1.BankId, b2.BankId);
+        }
+
         private static void PrintList(List<BankCheck> list)
         {
             for (int i = 0; i < list.Count; i++)
@@ -66,20 +69,17 @@ namespace MPINET
         private static List<BankCheck> Merge(List<BankCheck> v1, List<BankCheck> v2)
         {
             int a = 0, b = 0;
-            //int i = 0;
             int count1 = v1.Count;
             int count2 = v2.Count;
             List<BankCheck> result = new List<BankCheck>();
             while (a < count1 && b < count2)
             {
-                if (Int32.Parse(v1[a].BankId) <= Int32.Parse(v2[b].BankId))
+                if (CompareBankCheck(v1[a], v2[b]) < 0)
                 {
-                    //result[i++] = v1[a++];
                     result.Add(v1[a++]);
                 }
                 else
                 {
-                    //result[i++] = v2[b++];
                     result.Add(v2[b++]);
                 }
             }
@@ -88,7 +88,6 @@ namespace MPINET
             {
                 for (int j = a; j < count1; j++)
                 {
-                    //result[i++] = v1[j];
                     result.Add(v1[j]);
                 }
             }
@@ -96,7 +95,6 @@ namespace MPINET
             {
                 for (int j = b; j < count2; j++)
                 {
-                    //result[i++] = v2[j];
                     result.Add(v2[j]);
                 }
             }
@@ -142,31 +140,6 @@ namespace MPINET
                     Quick_Sort(l, 0, chunkSize - 1);
                     result.Add(l);
                     PrintList(l);
-                    /*
-                    int rank = 0;
-                    // int tag = 0;
-                    for (int i = chunkSize; i < n && rank < comm.Size;)
-                    {
-                        rank++;
-                        List<BankCheck> chunk = new List<BankCheck>();
-                        int k = 0;
-                        while (k < chunkSize && i < n)
-                        {
-                            ++k;
-                            chunk.Add(input[i]);
-                            ++i;
-                            Console.WriteLine("k = {0}, i = {1}", k, i);
-                        }
-                        Console.WriteLine("Rank={0}", rank);
-                        PrintList(chunk);
-                        comm.Send(chunk, rank, 0);
-                        List<BankCheck> list = comm.Receive<List<BankCheck>>(rank, 1);
-                        Console.WriteLine("here");
-                        result.Add(list);
-
-                        Console.WriteLine("Rank={0}", rank);
-                    }
-                    */
 
                     int rank = 1;
                     int index = chunkSize;
@@ -203,7 +176,7 @@ namespace MPINET
                     }
                     PrintList(resultFinal);
                     Console.WriteLine();
-                    
+
                 }
                 else
                 {
