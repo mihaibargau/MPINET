@@ -1,6 +1,7 @@
-﻿using System;
+﻿using MPINET.Bank;
+using System;
 using System.Collections.Generic;
-using MPI;
+using System.IO;
 namespace MPINET
 {
     class Program
@@ -56,13 +57,18 @@ namespace MPINET
 
         public static int CompareBankCheck(BankCheck b1, BankCheck b2)
         {
-            return (String.Compare(b1.BankId, b2.BankId) == 0) ? String.Compare(b1.AccountId, b2.AccountId) : String.Compare(b1.BankId, b2.BankId);
+
+            //   return (String.Compare(b1.BankId, b2.BankId) == 0) ? String.Compare(b1.AccountId, b2.AccountId) : String.Compare(b1.BankId, b2.BankId);
+            return (int.Parse(b1.BankId).CompareTo(int.Parse(b2.BankId)) == 0) ?
+                (int.Parse(b1.AccountId).CompareTo(int.Parse(b2.AccountId))) :
+                ((int.Parse(b1.BankId)).CompareTo(int.Parse(b2.BankId)));
+
         }
 
         private static void PrintList(List<BankCheck> list)
         {
             for (int i = 0; i < list.Count; i++)
-                Console.WriteLine("BankId= {0}, AccountId= {1}, CheckNumber= {2}", list[i].BankId, list[i].AccountId, list[i].CheckNumber);
+                Console.WriteLine("BankId= {0}, AccountId= {1}, CheckNumber= {2}", int.Parse(list[i].BankId), int.Parse(list[i].AccountId), int.Parse(list[i].CheckNumber));
         }
 
         /* merge two sorted arrays v1, v2 of lengths n1, n2, respectively */
@@ -103,32 +109,32 @@ namespace MPINET
             return result;
         }
 
+
+
         static void Main(string[] args)
         {
             MPI.Environment.Run(ref args, comm =>
             {
                 if (comm.Rank == 0)
                 {
-                    if (comm.Size <= 0)
+                    string filePath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName, "input.txt");
+                    if (!File.Exists(filePath))
                     {
-                        Console.WriteLine("Nothing to do..");
-                        return;
+                        Console.WriteLine("Input file not found...");
+                        comm.Abort(1);
                     }
 
-                    Console.Write("Enter number of checks: ");
-                    int n = Convert.ToInt32(Console.ReadLine());
+                    string[] lines = File.ReadAllLines(filePath);
                     List<BankCheck> input = new List<BankCheck>();
-                    for (int i = 0; i < n; i++)
+                    foreach (string line in lines)
                     {
-                        Console.WriteLine("BankId AccountId CheckNumber");
-                        string inp = Console.ReadLine();
-                        string[] data = inp.Split(' ');
-                        BankCheck bankCheck = new BankCheck(data[0], data[1], data[2]);
-                        input.Add(bankCheck);
+                        string[] col = line.Split(" ");
+                        // Bankid AccountId CheckNumber
+                        input.Add(new BankCheck(col[0], col[1], col[2]));
                     }
+                    int n = input.Count;
 
                     int chunkSize = (n % comm.Size != 0) ? n / comm.Size + 1 : n / comm.Size;
-                    Console.WriteLine("Chunk size = {0}", chunkSize);
 
 
                     List<List<BankCheck>> result = new List<List<BankCheck>>();
@@ -139,7 +145,6 @@ namespace MPINET
 
                     Quick_Sort(l, 0, chunkSize - 1);
                     result.Add(l);
-                    PrintList(l);
 
                     int rank = 1;
                     int index = chunkSize;
@@ -148,35 +153,22 @@ namespace MPINET
 
                         List<BankCheck> chunkSend = new List<BankCheck>();
                         for (int numberOfElementsTaken = 0; numberOfElementsTaken < chunkSize && index < n; numberOfElementsTaken++, index++)
-                        {
                             chunkSend.Add(input[index]);
-                            Console.WriteLine("value of index in for : {0}", index);
-                        }
+
                         comm.Send(chunkSend, rank, 0);
                         List<BankCheck> list = comm.Receive<List<BankCheck>>(rank, 1);
-                        Console.WriteLine("Rank= {0}", rank);
-                        PrintList(list);
                         result.Add(list);
                         ++rank;
 
                     }
 
-                    Console.WriteLine();
-
-                    foreach (var sublist in result)
-                    {
-                        PrintList(sublist);
-                    }
-
-                    Console.WriteLine();
                     List<BankCheck> resultFinal = result[0];
                     for (int resultI = 1; resultI < result.Count; resultI++)
-                    {
                         resultFinal = Merge(resultFinal, result[resultI]);
-                    }
+
                     PrintList(resultFinal);
                     Console.WriteLine();
-
+                    comm.Dispose();
                 }
                 else
                 {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MPINET
+namespace MPINET.Bank
 {
     [Serializable]
     class BankCheck
@@ -8,7 +8,7 @@ namespace MPINET
         public string BankId { get; set; }
         public string AccountId { get; set; }
         public string CheckNumber { get; set; }
-        
+
         public BankCheck(string bankid, string accountid, string checknumber)
         {
             BankId = bankid;
