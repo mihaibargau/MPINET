@@ -46,7 +46,6 @@ namespace MPINET
                     arr[left] = arr[right];
                     arr[right] = temp;
 
-
                 }
                 else
                 {
@@ -59,16 +58,15 @@ namespace MPINET
         {
 
             //   return (String.Compare(b1.BankId, b2.BankId) == 0) ? String.Compare(b1.AccountId, b2.AccountId) : String.Compare(b1.BankId, b2.BankId);
-            return (int.Parse(b1.BankId).CompareTo(int.Parse(b2.BankId)) == 0) ?
-                (int.Parse(b1.AccountId).CompareTo(int.Parse(b2.AccountId))) :
-                ((int.Parse(b1.BankId)).CompareTo(int.Parse(b2.BankId)));
-
+            return (b1.BankId.CompareTo(b2.BankId) == 0) ?
+                b1.AccountId.CompareTo(b2.AccountId) :
+                b1.BankId.CompareTo(b2.BankId);
         }
 
         private static void PrintList(List<BankCheck> list)
         {
             for (int i = 0; i < list.Count; i++)
-                Console.WriteLine("BankId= {0}, AccountId= {1}, CheckNumber= {2}", int.Parse(list[i].BankId), int.Parse(list[i].AccountId), int.Parse(list[i].CheckNumber));
+                Console.WriteLine("BankId= {0}, AccountId= {1}, CheckNumber= {2}", list[i].BankId, list[i].AccountId, list[i].CheckNumber);
         }
 
         /* merge two sorted arrays v1, v2 of lengths n1, n2, respectively */
@@ -104,8 +102,6 @@ namespace MPINET
                     result.Add(v2[j]);
                 }
             }
-
-
             return result;
         }
 
@@ -131,11 +127,13 @@ namespace MPINET
                         string[] col = line.Split(" ");
                         // Bankid AccountId CheckNumber
                         input.Add(new BankCheck(col[0], col[1], col[2]));
+
                     }
+                    Console.WriteLine("Input file reading done!");
                     int n = input.Count;
+                    Console.WriteLine("Number of bank check(s) read= {0}", n);
 
                     int chunkSize = (n % comm.Size != 0) ? n / comm.Size + 1 : n / comm.Size;
-
 
                     List<List<BankCheck>> result = new List<List<BankCheck>>();
 
@@ -155,17 +153,15 @@ namespace MPINET
                         for (int numberOfElementsTaken = 0; numberOfElementsTaken < chunkSize && index < n; numberOfElementsTaken++, index++)
                             chunkSend.Add(input[index]);
 
-                        comm.Send(chunkSend, rank, 0);
-                        List<BankCheck> list = comm.Receive<List<BankCheck>>(rank, 1);
-                        result.Add(list);
+                        comm.ImmediateSend(chunkSend, rank, 0);
+                        result.Add((List<BankCheck>)(comm.ImmediateReceive<List<BankCheck>>(rank, 1)).GetValue());
                         ++rank;
-
                     }
 
                     List<BankCheck> resultFinal = result[0];
                     for (int resultI = 1; resultI < result.Count; resultI++)
                         resultFinal = Merge(resultFinal, result[resultI]);
-
+                    Console.WriteLine("Answer...");
                     PrintList(resultFinal);
                     Console.WriteLine();
                     comm.Dispose();
@@ -176,8 +172,6 @@ namespace MPINET
                     Quick_Sort(chunk, 0, chunk.Count - 1);
                     comm.Send(chunk, 0, 1);
                 }
-
-
             });
         }
     }
