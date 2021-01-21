@@ -1,6 +1,7 @@
 ﻿using MPINET.Bank;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 namespace MPINET
 {
@@ -69,7 +70,6 @@ namespace MPINET
                 Console.WriteLine("BankId= {0}, AccountId= {1}, CheckNumber= {2}", list[i].BankId, list[i].AccountId, list[i].CheckNumber);
         }
 
-        /* merge two sorted arrays v1, v2 of lengths n1, n2, respectively */
         private static List<BankCheck> Merge(List<BankCheck> v1, List<BankCheck> v2)
         {
             int a = 0, b = 0;
@@ -118,8 +118,7 @@ namespace MPINET
                     {
                         Console.WriteLine("Input file not found...");
                         comm.Abort(1);
-                    }
-
+                    }       
                     string[] lines = File.ReadAllLines(filePath);
                     List<BankCheck> input = new List<BankCheck>();
                     foreach (string line in lines)
@@ -140,7 +139,8 @@ namespace MPINET
                     List<BankCheck> l = new List<BankCheck>();
                     for (int i = 0; i < chunkSize; i++)
                         l.Add(input[i]);
-
+                    Stopwatch stopWatch = new Stopwatch();
+                    stopWatch.Start();
                     Quick_Sort(l, 0, chunkSize - 1);
                     result.Add(l);
 
@@ -163,7 +163,11 @@ namespace MPINET
                         resultFinal = Merge(resultFinal, result[resultI]);
                     Console.WriteLine("Answer...");
                     PrintList(resultFinal);
+                    stopWatch.Stop();
                     Console.WriteLine();
+                    TimeSpan ts = stopWatch.Elapsed;
+                    string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+                    Console.WriteLine("Run Time " + elapsedTime);
                     comm.Dispose();
                 }
                 else

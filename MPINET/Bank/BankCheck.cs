@@ -5,9 +5,9 @@ namespace MPINET.Bank
     [Serializable]
     class BankCheck
     {
-        public uint BankId { get; set; }
-        public uint AccountId { get; set; }
-        public uint CheckNumber { get; set; }
+        public uint BankId;
+        public uint AccountId;
+        public uint CheckNumber;
 
         public BankCheck(string bankid, string accountid, string checknumber)
         {
