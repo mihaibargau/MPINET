@@ -1,4 +1,5 @@
-﻿using MPINET.Bank;
+﻿using MPI;
+using MPINET.Bank;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -118,7 +119,7 @@ namespace MPINET
                     {
                         Console.WriteLine("Input file not found...");
                         comm.Abort(1);
-                    }       
+                    }
                     string[] lines = File.ReadAllLines(filePath);
                     List<BankCheck> input = new List<BankCheck>();
                     foreach (string line in lines)
@@ -154,7 +155,12 @@ namespace MPINET
                             chunkSend.Add(input[index]);
 
                         comm.ImmediateSend(chunkSend, rank, 0);
-                        result.Add((List<BankCheck>)(comm.ImmediateReceive<List<BankCheck>>(rank, 1)).GetValue());
+                        ++rank;
+                    }
+                    rank = 1;
+                    while (rank < comm.Size)
+                    {
+                        result.Add((List<BankCheck>)comm.ImmediateReceive<List<BankCheck>>(rank, 1).GetValue());
                         ++rank;
                     }
 
@@ -172,9 +178,10 @@ namespace MPINET
                 }
                 else
                 {
-                    List<BankCheck> chunk = comm.Receive<List<BankCheck>>(0, 0);
+                    ReceiveRequest recv = comm.ImmediateReceive<List<BankCheck>>(0, 0);
+                    List<BankCheck> chunk = (List<BankCheck>)recv.GetValue();
                     Quick_Sort(chunk, 0, chunk.Count - 1);
-                    comm.Send(chunk, 0, 1);
+                    comm.ImmediateSend(chunk, 0, 1);
                 }
             });
         }
