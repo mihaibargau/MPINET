@@ -1,5 +1,4 @@
-﻿using MPI;
-using MPINET.Bank;
+﻿using MPINET.Bank;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -55,7 +54,6 @@ namespace MPINET
                 }
             }
         }
-
         public static int CompareBankCheck(BankCheck b1, BankCheck b2)
         {
 
@@ -64,13 +62,11 @@ namespace MPINET
                 b1.AccountId.CompareTo(b2.AccountId) :
                 b1.BankId.CompareTo(b2.BankId);
         }
-
         private static void PrintList(List<BankCheck> list)
         {
             for (int i = 0; i < list.Count; i++)
                 Console.WriteLine("BankId= {0}, AccountId= {1}, CheckNumber= {2}", list[i].BankId, list[i].AccountId, list[i].CheckNumber);
         }
-
         private static List<BankCheck> Merge(List<BankCheck> v1, List<BankCheck> v2)
         {
             int a = 0, b = 0;
@@ -105,9 +101,6 @@ namespace MPINET
             }
             return result;
         }
-
-
-
         static void Main(string[] args)
         {
             MPI.Environment.Run(ref args, comm =>
@@ -129,47 +122,29 @@ namespace MPINET
                         input.Add(new BankCheck(col[0], col[1], col[2]));
 
                     }
-                    Console.WriteLine("Input file reading done!");
                     int n = input.Count;
                     Console.WriteLine("Number of bank check(s) read= {0}", n);
-
                     int chunkSize = (n % comm.Size != 0) ? n / comm.Size + 1 : n / comm.Size;
-
-                    List<List<BankCheck>> result = new List<List<BankCheck>>();
-
-                    List<BankCheck> l = new List<BankCheck>();
-                    for (int i = 0; i < chunkSize; i++)
-                        l.Add(input[i]);
+                    int rank = 1;
+                    int index = 0;
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
-                    Quick_Sort(l, 0, chunkSize - 1);
-                    result.Add(l);
-
-                    int rank = 1;
-                    int index = chunkSize;
-                    while (rank < comm.Size)
+                    for (; rank < comm.Size; rank++)
                     {
-
                         List<BankCheck> chunkSend = new List<BankCheck>();
                         for (int numberOfElementsTaken = 0; numberOfElementsTaken < chunkSize && index < n; numberOfElementsTaken++, index++)
                             chunkSend.Add(input[index]);
-
                         comm.ImmediateSend(chunkSend, rank, 0);
-                        ++rank;
                     }
-                    rank = 1;
-                    while (rank < comm.Size)
-                    {
+                    List<List<BankCheck>> result = new List<List<BankCheck>>();
+                    for (rank = 1; rank < comm.Size; rank++)
                         result.Add((List<BankCheck>)comm.ImmediateReceive<List<BankCheck>>(rank, 1).GetValue());
-                        ++rank;
-                    }
-
                     List<BankCheck> resultFinal = result[0];
                     for (int resultI = 1; resultI < result.Count; resultI++)
                         resultFinal = Merge(resultFinal, result[resultI]);
-                    Console.WriteLine("Answer...");
-                    PrintList(resultFinal);
                     stopWatch.Stop();
+
+                    PrintList(resultFinal);
                     Console.WriteLine();
                     TimeSpan ts = stopWatch.Elapsed;
                     string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
@@ -178,8 +153,7 @@ namespace MPINET
                 }
                 else
                 {
-                    ReceiveRequest recv = comm.ImmediateReceive<List<BankCheck>>(0, 0);
-                    List<BankCheck> chunk = (List<BankCheck>)recv.GetValue();
+                    List<BankCheck> chunk = (List<BankCheck>)comm.ImmediateReceive<List<BankCheck>>(0, 0).GetValue();
                     Quick_Sort(chunk, 0, chunk.Count - 1);
                     comm.ImmediateSend(chunk, 0, 1);
                 }

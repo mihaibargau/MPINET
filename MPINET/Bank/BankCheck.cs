@@ -8,7 +8,6 @@ namespace MPINET.Bank
         public uint BankId;
         public uint AccountId;
         public uint CheckNumber;
-
         public BankCheck(string bankid, string accountid, string checknumber)
         {
             if (bankid == null || accountid == null || checknumber == null)
