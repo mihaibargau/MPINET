@@ -64,8 +64,8 @@ namespace MPINET
         }
         private static void PrintList(List<BankCheck> list)
         {
-            for (int i = 0; i < list.Count; i++)
-                Console.WriteLine("BankId= {0}, AccountId= {1}, CheckNumber= {2}", list[i].BankId, list[i].AccountId, list[i].CheckNumber);
+            foreach (BankCheck bankCheck in list)
+                Console.WriteLine("BankId= {0}, AccountId= {1}, CheckNumber= {2}", bankCheck.BankId, bankCheck.AccountId, bankCheck.CheckNumber);
         }
         private static List<BankCheck> Merge(List<BankCheck> v1, List<BankCheck> v2)
         {
@@ -120,7 +120,6 @@ namespace MPINET
                         string[] col = line.Split(" ");
                         // Bankid AccountId CheckNumber
                         input.Add(new BankCheck(col[0], col[1], col[2]));
-
                     }
                     int n = input.Count;
                     Console.WriteLine("Number of bank check(s) read= {0}", n);
